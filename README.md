@@ -1,72 +1,57 @@
-# Beryll Scraper — Cloudflare Pages Edition
+# Beryll Scraper — Xbanxia browser build
 
-A mobile-first chapter analysis and export workspace. This edition is designed for Cloudflare Pages with Pages Functions. The browser holds the active extraction session in memory; no chapter archive, account database, KV namespace, Durable Object, or R2 bucket is required.
+Beryll Scraper is a browser-only extraction tool for Xbanxia. It is intentionally separate from Beryll TL. The static app is hosted on GitHub Pages; chapter requests are made by a bookmarklet running on the source page, and chapter text is stored locally in the browser's IndexedDB.
 
-## Deploy with Cloudflare Pages and GitHub
+## Included
 
-1. Create a GitHub repository for this project and upload the contents of this folder (the `public`, `functions`, and `src` folders, `package.json`, lockfile, and `wrangler.toml`). Do not upload `node_modules`, `downloads`, or private test data.
-2. In Cloudflare, open **Workers & Pages → Create → Pages → Connect to Git**.
-3. Select the Beryll Scraper GitHub repository.
-4. Use these build settings:
-   - Framework preset: **None**
-   - Build command: leave blank
-   - Build output directory: `public`
-   - Root directory: `/`
-5. Deploy. Pages automatically detects the `functions/` directory at the repository root. The `wrangler.toml` enables `nodejs_compat` for the DOCX/EPUB libraries.
-6. Open the generated `*.pages.dev` address and test `/api/health` after deployment.
+- Xbanxia novel-directory parsing using selectors confirmed against the supplied rendered page (`.book-describe h1`, `.book-describe p a`, `.describe-html`, `.book-list ul li a[href]`).
+- Individual chapter extraction using `#nr_title` and `#nr1`, with injected scripts, iframes, navigation and detected advertising containers removed while preserving paragraph breaks.
+- Same-origin page-fetch bridge. The bookmarklet refuses to fetch URLs outside the source page's origin.
+- Directory pagination discovery where a next-page link is exposed; duplicate URLs are removed while retaining source order.
+- Chapter list with individual selection, select all/none and one-based inclusive range selection.
+- Sequential extraction, pause-after-current-chapter, resume, retry-failed, progress display and per-chapter errors.
+- Short-chapter warnings and default deselection; validation for possible numbering gaps, duplicate chapter numbers, failed/empty chapters and pending work.
+- IndexedDB recovery of novel details, extracted text, selections and chapter statuses. Relaunch the bookmarklet on the source novel page to reconnect after reopening the app.
+- TXT, DOCX and EPUB 3 exports. Export only selected chapters with extracted text, in source order. Optional novel title/author metadata can be included or omitted.
+- Responsive black/orange interface.
 
-If Cloudflare's dashboard asks for a build command, leave it empty. The app is static HTML/CSS/JS plus Pages Functions; no frontend build step is required.
+## Install / host
 
-## Local Pages preview (optional)
+1. Upload the contents of this folder to a GitHub repository named `beryll-scraper-browser` (or change the path in `bookmarklet.txt` to match your repository).
+2. In GitHub, open **Settings → Pages**, choose **Deploy from a branch**, select the `main` branch and `/ (root)`, then save.
+3. Wait for GitHub Pages to publish the site.
+4. Open `bookmarklet.txt`, replace `YOUR_GITHUB_USERNAME` with your GitHub username, copy the complete `javascript:` line, and create a Chrome bookmark with that line as its URL.
+5. Open an Xbanxia novel directory page, tap the bookmark, then tap **Inspect page**.
+6. Select chapters and choose **Extract chapters**. Export selected completed chapters as TXT, DOCX or EPUB.
 
-Install dependencies, then use Wrangler:
+If you change the repository name or Pages URL, update the `APP` constant in `bookmarklet.txt` before creating the bookmark.
 
-```bash
-npm install
-npx wrangler pages dev public
+## Recovery
+
+The app saves its active session in IndexedDB for the GitHub Pages origin. If the browser or app closes, reopen the source novel page and launch the bookmarklet again. The saved chapter list and extracted text should be restored; the fresh bookmarklet launch reconnects the page-fetch bridge. Clearing browser site data, changing browser profile or using another browser can remove/hide the saved session. **Clear session** deletes the saved local session.
+
+## Export behavior
+
+- **TXT:** UTF-8 plain text with chapter headings; optional title and author header.
+- **DOCX:** Word Open XML document with title/author metadata, chapter headings, paragraph spacing and page breaks between chapters.
+- **EPUB:** EPUB 3 package with `mimetype` first and uncompressed, package metadata, navigation table of contents, stylesheet and one XHTML file per chapter.
+- Filename is sanitized for common filesystem restrictions. Only selected chapters with non-empty extracted text are exported.
+
+## Scope and limitations
+
+- This build supports Xbanxia only. Beryll TL integration and Omni extraction are deliberately excluded from this project scope. Generic HTML is not advertised as supported.
+- The bridge can fetch only pages on the same origin as the source page. It does not bypass logins, paywalls, access controls, anti-bot restrictions or browser security rules.
+- If Xbanxia changes its markup, blocks a request or inserts a new type of advertisement, extraction may fail or require adapter updates. Review the validation report and sample the exported text.
+- Directory pagination depends on a discoverable next-page link. The supplied novel page contains all 114 chapter links in one directory.
+- Validation is advisory. Numbering gaps and duplicate numbers may be legitimate extras, so nothing is silently deleted.
+- No live end-to-end extraction has been performed against Xbanxia in this build environment. Automated tests cover the core, validation logic, adapter helpers and export package structure; browser/source-site testing remains necessary before relying on a full novel export.
+
+## Development
+
+Requires a modern browser and Node.js 18+ for tests.
+
+```sh
+npm test
 ```
 
-The Pages Functions are served alongside the static files. The older Node server remains available with `npm start` for local development, but the Cloudflare deployment does not use it.
-
-## Use
-
-1. Paste one novel-directory URL or one chapter URL.
-2. Beryll checks the page, follows same-site chapter links or the explicit next-chapter link, and extracts readable HTML text.
-3. Results appear in a selectable table. Short chapters remain visible and start unchecked.
-4. Use individual checkboxes, Select All/None, or ranges such as `1-10,15,18-25`.
-5. Select TXT, DOCX, or EPUB. You can export repeatedly without fetching the source again while the browser tab remains open.
-6. Directory and chapter-chain scraping runs in batches of 10 to fit Cloudflare request-duration limits. Use **Load next 10 chapters** to continue. The active list and chapter text stay in the current page's memory.
-
-## Bookmarklet
-
-After deployment, create a browser bookmark named **Send to Beryll Scraper**. Replace `YOUR-PROJECT.pages.dev` with the actual Pages hostname and use this as the bookmark URL:
-
-```javascript
-javascript:(()=>{location.href='https://YOUR-PROJECT.pages.dev/?url='+encodeURIComponent(location.href)})()
-```
-
-When tapped on a source page, the bookmarklet opens the hosted app and passes the current page URL. It does not run the scraper inside the source page; the Cloudflare Pages Function fetches the URL. The source site must permit the request and expose readable HTML to the server.
-
-## Temporary session and privacy
-
-- Extracted chapters are returned to the browser and held in the page's JavaScript memory.
-- Exports are generated on demand and returned as downloads; they are not written to a server disk or stored in GitHub.
-- Clear session removes the active chapter list from the page.
-- Reloading or closing the tab discards the in-memory session. Do not rely on a browser tab as permanent storage.
-- The source URL and chapter text are sent to the Cloudflare Pages Function to perform extraction/export. Cloudflare processes those requests as the hosting provider; this is not an offline/local-only app.
-
-## Limits and access
-
-- Each request processes up to 10 chapters, then offers a continuation button. This is designed to reduce Cloudflare request timeouts.
-- Each fetched HTML page is limited to 5 MB; an individual export request is limited to 8 MB of text and 250 chapters.
-- The scraper uses ordinary HTTP requests, follows same-host redirects only, checks `robots.txt`, and waits at least one second between page requests in a batch.
-- It does not execute page JavaScript or bypass logins, paywalls, CAPTCHAs, or access controls. Some sites may block Cloudflare-origin requests or require browser rendering; those sites will not work with this version.
-- Use it only for public-domain/openly licensed material, content you own, or material you are authorised to access and reproduce. Buying access to a text does not itself grant translation or republication rights. Respect source-site terms and applicable law.
-
-## Project layout
-
-- `public/` — responsive browser interface
-- `functions/api/` — Cloudflare Pages API endpoints
-- `functions/_lib/scraper.js` — server-side page discovery and extraction
-- `src/exporters/` — TXT, DOCX and EPUB export generation
-- `src/` — original Node CLI and local-development engine
+The project uses native browser APIs and has no runtime package dependencies.
