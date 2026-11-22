@@ -1,1 +1,85 @@
-4
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <title>Beryll Scraper</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">B</span><span>BERYLL <b>SCRAPER</b></span></a>
+    <span class="local-badge"><i></i> CLOUD WORKSPACE</span>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">YOUR READING ARCHIVE TOOL</p>
+      <h1>Bring chapters<br><span>together.</span></h1>
+      <p class="intro">Paste a novel page or a chapter link. Beryll will analyse the page, find chapters and prepare them for export.</p>
+    </section>
+
+    <section class="panel input-panel">
+      <label for="sourceUrl">Novel or chapter URL</label>
+      <div class="url-row">
+        <input id="sourceUrl" type="url" inputmode="url" placeholder="https://example.com/novel-or-chapter" autocomplete="url">
+        <button id="analyzeBtn" class="button primary">Analyse <span>↗</span></button>
+      </div>
+      <p class="hint">One URL is enough. Start from the novel's chapter list or any chapter with a next-chapter link.</p>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="workspace" class="workspace hidden">
+      <div class="section-head">
+        <div><p class="eyebrow">EXTRACTION RESULTS</p><h2 id="novelTitle">Chapters</h2></div>
+        <button id="clearBtn" class="button ghost">Clear session</button>
+      </div>
+      <div class="stats">
+        <div><strong id="chapterCount">0</strong><span>Extracted</span></div>
+        <div><strong id="shortCount">0</strong><span>Short chapters</span></div>
+        <div><strong id="failedCount">0</strong><span>Failed</span></div>
+      </div>
+
+      <div class="panel selection-panel">
+        <div class="selection-top">
+          <div><h3>Choose chapters</h3><p class="hint">Short chapters stay available, but start unchecked.</p></div>
+          <div class="quick-actions"><button id="selectAll" class="text-button">All</button><span>·</span><button id="selectNone" class="text-button">None</button></div>
+        </div>
+        <div class="range-row">
+          <input id="rangeInput" type="text" placeholder="Example: 1-10, 15, 18-25" aria-label="Chapter ranges">
+          <button id="applyRange" class="button secondary">Apply range</button>
+        </div>
+        <p class="hint">Use the row numbers shown in the first column. Separate ranges and individual numbers with commas.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th class="check-col"></th><th>#</th><th>Chapter</th><th>Length</th><th>Status</th></tr></thead>
+            <tbody id="chapterRows"></tbody>
+          </table>
+        </div>
+        <div class="continue-row">
+          <button id="loadMoreBtn" class="button secondary hidden">Load next 10 chapters</button>
+        </div>
+      </div>
+
+      <div class="panel export-panel">
+        <p class="eyebrow">EXPORT</p>
+        <h3>Save your selection</h3>
+        <label for="filename">Filename</label>
+        <input id="filename" type="text" placeholder="My_Novel" value="">
+        <div class="download-grid">
+          <button class="button download" data-format="txt"><span>TXT</span><small>Plain text</small></button>
+          <button class="button download" data-format="docx"><span>DOCX</span><small>Word document</small></button>
+          <button class="button download" data-format="epub"><span>EPUB</span><small>E-book</small></button>
+        </div>
+        <p class="hint">You can download another format later without analysing the source again. Your extracted chapters remain in this active session.</p>
+      </div>
+      <div id="exportStatus" class="status" role="status" aria-live="polite"></div>
+      <div id="errors" class="errors hidden"></div>
+    </section>
+
+    <footer><span>BERYLL SCRAPER</span><span>Temporary browser session · No chapter archive is kept</span></footer>
+  </main>
+  <script src="/js/app.js" defer></script>
+</body>
+</html>
