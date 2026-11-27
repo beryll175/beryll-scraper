@@ -19,7 +19,7 @@ function updateExtractionButtons(){
   $('#retry-failed').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'error');
   $('#extract').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'discovered' && c.selected);
   $('#clear').disabled = extractionRunning;
-  $('#close-scraper').disabled = extractionRunning;
+  $('#close-scraper').disabled = extractionRunning && !extractionPaused;
 }
 function status(message){$('#status').textContent=message;}
 function parse(html){return new DOMParser().parseFromString(html,'text/html');}
@@ -233,8 +233,8 @@ async function retryFailed(){return runExtraction(true);}
 $('#inspect').addEventListener('click', inspect);
 $('#extract').addEventListener('click', extractAll);
 $('#close-scraper').addEventListener('click', () => {
-  if (extractionRunning) {
-    status('Finish or pause extraction before closing the scraper.');
+  if (extractionRunning && !extractionPaused) {
+    status('Pause extraction before closing the scraper.');
     return;
   }
 
