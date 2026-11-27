@@ -1,4 +1,4 @@
-import {xbanxiaAdapter} from './adapters/xbanxia.js';
+import {getAdapter} from './adapters/index.js';
 import {connectSourceBridge,fetchSourcePage} from './bridge.js';
 import {normalizeChapter,normalizeChapters,createNovelSession} from './core/model.js';
 import {selectAll,selectRange,getSelectedChapters} from './core/selection.js';
@@ -10,6 +10,7 @@ import {downloadEpub} from './exporters/epub.js';
 const $=s=>document.querySelector(s);
 let sourceDoc=null,sourceUrl='',directory=[],chapters=[],novel=null,errors=[];
 let extractionRunning=false, extractionPaused=false, pauseWaiters=[];
+let activeAdapter = null;
 function setPaused(value){extractionPaused=value;$('#pause-extract').textContent=value?'Resume':'Pause';$('#progress-text').textContent=value?'Paused after the current chapter.':'Resuming extraction…';if(!value){pauseWaiters.splice(0).forEach(resolve=>resolve());}}
 async function waitIfPaused(){if(!extractionPaused)return;await new Promise(resolve=>pauseWaiters.push(resolve));}
 function persistChapters(){if(sessionStore.get())sessionStore.update(s=>({...s,chapters}));}
@@ -32,31 +33,100 @@ function renderValidation(){const box=$('#validation');if(!chapters.length){box.
 function updateNovelCard(){ $('#novel-card').hidden=!novel; if(!novel)return;$('#novel-title').textContent=novel.title||'—';$('#novel-author').textContent=novel.author||'—';$('#novel-total').textContent=String(directory.length);$('#novel-description').textContent=novel.description||''; }
 connectSourceBridge(({html,url})=>{sourceDoc=parse(html);sourceUrl=new URL(url).href;$('#source-url').value=sourceUrl;$('#source-badge').textContent=new URL(url).hostname;status(sessionStore.get()?'Source reconnected. Your saved session is still available.':'Connected to source page. Ready to inspect.');updateExtractionButtons();});
 async function fetchDocument(url){const result=await fetchSourcePage(url);return parse(result.html);}
-async function inspect(){
-  if(!sourceDoc||!sourceUrl){status('No source-page connection. Close the panel and launch the bookmarklet from the novel page.');return;}
-  if(!xbanxiaAdapter.matches(sourceUrl)){status('This build currently supports Xbanxia only.');return;}
-  try{
-    const result=xbanxiaAdapter.inspect(sourceDoc,sourceUrl);
-    if(result.kind==='unknown')throw new Error('Could not identify an Xbanxia novel directory or chapter page.');
-    novel={title:result.title,author:result.author,description:result.description,sourceUrl,sourceId:new URL(sourceUrl).pathname};
-    directory=[...result.chapters];
-    const previous=sessionStore.get();
-    const novelKey=url=>{const parts=new URL(url).pathname.split('/').filter(Boolean);return parts[0]==='books'?(parts[1]||''):(new URL(url).pathname);};
-    const sameNovel=previous && novelKey(previous.sourceUrl)===novelKey(sourceUrl);
-    if(result.kind==='chapter'&&result.chapter){
-      const prior=sameNovel?previous.chapters.find(c=>c.url===result.chapter.url):null;
-      chapters=[normalizeChapter(prior||{...result.chapter,selected:!result.chapter.short})];directory=[{number:result.chapter.number,title:result.chapter.title,url:result.chapter.url}];
-    } else chapters=[];
-    // Discover additional directory pages, keeping source order and preventing loops.
-    const seenPages=new Set([sourceUrl]);let pageLinks=result.kind==='directory'?result.directoryPages:[];
-    while(pageLinks.length){const next=pageLinks.find(p=>!seenPages.has(p.url));if(!next)break;seenPages.add(next.url);const page=await fetchDocument(next.url);const found=xbanxiaAdapter.inspect(page,next.url);directory.push(...found.chapters);pageLinks=found.directoryPages;}
-    const seen=new Set();directory=directory.filter(ch=>{if(seen.has(ch.url))return false;seen.add(ch.url);return true;});
-    novel.totalChapters=directory.length;
-    if(result.kind!=='chapter') chapters=directory.map((item,i)=>{const prior=sameNovel?previous.chapters.find(c=>c.url===item.url):null;return normalizeChapter(prior||{...item,id:item.url,status:'discovered',selected:true},i);});
-    sessionStore.set({...createNovelSession({...novel,adapterId:'xbanxia',language:'zh'}),chapters:[...chapters]});updateNovelCard();render();
+async function inspect() {
+  if (!sourceDoc || !sourceUrl) {
+    status('No source-page connection. Launch the bookmarklet from the novel page.');
+    return;
+  }
+
+  activeAdapter = getAdapter(sourceUrl);
+
+  if (!activeAdapter || activeAdapter.id === 'generic-html') {
+    status('This website is not supported yet.');
+    return;
+  }
+
+  try {
+    const result = activeAdapter.inspect(sourceDoc, sourceUrl);
+
+    if (result.kind === 'unknown') {
+      throw new Error('Could not identify the novel directory or chapter page.');
+    }
+
+    novel = {
+      title: result.title,
+      author: result.author,
+      description: result.description,
+      sourceUrl,
+      sourceId: new URL(sourceUrl).pathname
+    };
+
+    directory = [...result.chapters];
+
+    const previous = sessionStore.get();
+
+    const sameNovel = previous &&
+      previous.sourceUrl === sourceUrl;
+
+    if (result.kind === 'chapter' && result.chapter) {
+      const prior = sameNovel
+        ? previous.chapters.find(c => c.url === result.chapter.url)
+        : null;
+
+      chapters = [
+        normalizeChapter(
+          prior || {
+            ...result.chapter,
+            selected: !result.chapter.short
+          }
+        )
+      ];
+
+      directory = [{
+        number: result.chapter.number,
+        title: result.chapter.title,
+        url: result.chapter.url
+      }];
+    } else {
+      chapters = directory.map((item, i) => {
+        const prior = sameNovel
+          ? previous.chapters.find(c => c.url === item.url)
+          : null;
+
+        return normalizeChapter(
+          prior || {
+            ...item,
+            id: item.url,
+            status: 'discovered',
+            selected: true
+          },
+          i
+        );
+      });
+    }
+
+    novel.totalChapters = directory.length;
+
+    sessionStore.set({
+      ...createNovelSession({
+        ...novel,
+        adapterId: activeAdapter.id,
+        language: 'zh'
+      }),
+      chapters: [...chapters]
+    });
+
+    updateNovelCard();
+    render();
     updateExtractionButtons();
-    status(`Xbanxia ${result.kind} identified. ${directory.length} chapter link(s) found.`);
-  }catch(error){status(error.message||String(error));}
+
+    status(
+      `${activeAdapter.label} identified. ${directory.length} chapter link(s) found.`
+    );
+
+  } catch (error) {
+    status(error.message || String(error));
+  }
 }
 async function runExtraction(retryOnly=false){
   if(extractionRunning)return;
@@ -76,7 +146,7 @@ async function runExtraction(retryOnly=false){
       $('#progress-text').textContent=`Extracting ${completed+1} of ${jobs.length}: ${chapter.title}`;
       try{
         const doc=await fetchDocument(chapter.url);
-        const extracted=xbanxiaAdapter.extractChapter(doc,chapter.url,chapter.title);
+        const extracted=activeAdapter.extractChapter(doc,chapter.url,chapter.title);
         chapters[index]=normalizeChapter({...extracted,selected:!extracted.short,status:'extracted'});
       }catch(error){
         const message=error.message||String(error);errors.push({title:chapter.title,url:chapter.url,error:message});
