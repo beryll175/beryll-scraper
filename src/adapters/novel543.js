@@ -1,4 +1,4 @@
-import {cleanText, safeSameHostUrl, parseNumber, textFromNode, makeChapter, uniqueLinks} from './shared.js';
+import {cleanText, safeSameHostUrl, parseNumber, textFromNode, makeChapter} from './shared.js';
 
 const HOST = 'www.novel543.com';
 
@@ -26,13 +26,32 @@ function nextPart(doc, pageUrl) {
   }
   return null;
 }
+function getNovel543Links(doc, pageUrl) {
+  const items = [];
+
+  doc.querySelectorAll(
+    '.chaplist ul.all a[href], .chaplist a[href], .chapter-list a[href], .list-chapter a[href], .chapter a[href], #chapter-list a[href], .book-chapter-list a[href], .catalog a[href]'
+  ).forEach(a => {
+    const url = safeSameHostUrl(a.getAttribute('href'), pageUrl);
+
+    const title = cleanText(
+      a.textContent || a.getAttribute('title')
+    );
+
+    if (!url || !title || url === new URL(pageUrl).href) return;
+
+    items.push({
+      number: parseNumber(title),
+      title,
+      url
+    });
+  });
+
+  return items;
+}
 
 export function inspectNovel543(doc, pageUrl) {
-  const links = uniqueLinks(
-    doc,
-    pageUrl,
-    '.chaplist ul.all a[href], .chaplist a[href], .chapter-list a[href], .list-chapter a[href], .chapter a[href], #chapter-list a[href], .book-chapter-list a[href], .catalog a[href]'
-  );
+  const links = getNovel543Links(doc, pageUrl);
   const content = doc.querySelector('.chapter-content .content, .chapter-content, #chapter-content, .read-content');
   const chapter = content ? extractChapter(doc, pageUrl) : null;
 
