@@ -1,6 +1,6 @@
 /** Full Novel Website adapter. */
 
-const HOST = 'quanben-xiaoshuo.net';
+const HOST = 'quanben-xiaoshuo.com';
 
 export function matches(input) {
   try {
