@@ -1,12 +1,14 @@
-Beryll Scraper
+# Beryll Scraper
 
-Beryll Scraper is a browser-based tool for extracting chapters from supported Chinese novel websites.
+> A browser-based tool for extracting chapters from supported Chinese novel websites.
 
 It runs directly in your browser and allows you to discover, select, extract, and export novel chapters without uploading your extracted content to a Beryll server.
 
-"Open Beryll Scraper" (https://beryll175.github.io/beryll-scraper/)
+**[🚀 Open Beryll Scraper](https://beryll175.github.io/beryll-scraper/)**
 
-Supported Websites
+---
+
+## 🌐 Supported Websites
 
 The currently configured adapters support:
 
@@ -19,7 +21,9 @@ The currently configured adapters support:
 
 Website support depends on the site's page structure and adapter configuration.
 
-Features
+---
+
+## ✨ Features
 
 - Automatic novel and chapter detection.
 - Chapter directory pagination discovery where supported.
@@ -37,60 +41,66 @@ Features
 - TXT, DOCX, and EPUB exports where supported.
 - Responsive black-and-orange interface.
 
-Getting Started
+---
+
+## 🚀 Getting Started
 
 You do not need to install the application itself. Beryll Scraper is hosted on GitHub Pages.
 
 You only need to install its bookmarklet.
 
-Step 1: Open the Scraper
+### Step 1: Open the Scraper
 
 Visit:
 
 https://beryll175.github.io/beryll-scraper/
 
-Step 2: Get the Bookmarklet
+### Step 2: Get the Bookmarklet
 
-1. Open the "Beryll Scraper repository" (https://github.com/beryll175/beryll-scraper).
-2. Open "bookmarklet.txt".
-3. Copy the complete line of code beginning with "javascript:".
+1. Open the [Beryll Scraper repository](https://github.com/beryll175/beryll-scraper).
+2. Open `bookmarklet.txt`.
+3. Copy the complete line of code beginning with `javascript:`.
 
-Step 3: Create a Browser Bookmark
+### Step 3: Create a Browser Bookmark
 
 1. Create a new bookmark in your browser.
-2. Name it Beryll Scraper.
+2. Name it **Beryll Scraper**.
 3. Paste the copied code into the bookmark's URL or address field.
 4. Save the bookmark.
 
-Make sure the code goes into the URL field, not the bookmark name.
+> **Important:** Make sure the code goes into the URL field, not the bookmark name.
 
-Step 4: Start Scraping
+### Step 4: Start Scraping
 
 1. Visit a supported novel website.
 2. Open the novel's chapter directory or table of contents.
 3. Launch the Beryll Scraper bookmarklet.
-4. Select Inspect page.
+4. Select **Inspect page**.
 5. Review the discovered chapters.
 6. Select the chapters you want.
-7. Select Extract chapters.
+7. Select **Extract chapters**.
 
-Step 5: Export
+### Step 5: Export
 
 Once extraction is complete, choose your preferred format:
 
-- TXT
-- DOCX
-- EPUB
+- **TXT**
+- **DOCX**
+- **EPUB**
 
 Only selected chapters with successfully extracted text are exported.
 
-Full User Guide
+---
+
+## 📖 Full User Guide
 
 For detailed instructions, including bookmarklet installation, extraction, exporting, session recovery, and troubleshooting, see:
 
-"Beryll Scraper Installation & User Guide" (docs/USER_GUIDE.md)
+**[Beryll Scraper Installation & User Guide](docs/USER_GUIDE.md)**
 
-Privacy and Saved Sessions
+---
+
+## 🔒 Privacy and Saved Sessions
 
 Beryll Scraper uses IndexedDB to save sessions locally in your browser.
 
@@ -99,9 +109,11 @@ Beryll Scraper uses IndexedDB to save sessions locally in your browser.
 - Your extracted content is not uploaded to a Beryll server.
 - Sessions may be lost if browser site data is cleared or you switch browsers or browser profiles.
 
-Use Clear session to delete your saved session.
+Use **Clear session** to delete your saved session.
 
-Technical Details
+---
+
+## ⚙️ Technical Details
 
 - Static browser application.
 - JavaScript ES modules.
@@ -113,12 +125,16 @@ Technical Details
 
 Run tests with:
 
+```bash
 npm test
+```
 
-Updates
+---
+
+## 🔄 Updates
 
 Beryll Scraper is hosted on GitHub Pages. Updates to the project become available to users when GitHub Pages publishes the latest changes.
 
 ---
 
-Beryll Scraper is an independent browser-based project. Website support may change as adapters are added or updated.
+*Beryll Scraper is an independent browser-based project. Website support may change as adapters are added or updated.*
