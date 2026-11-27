@@ -128,9 +128,6 @@ while(queuedPages.length && visitedPages.size<100){
 
   for(const next of pageResult.directoryPages||[]) queuedPages.push(next);
 }
-
-directory=[...new Map(directory.map(item=>[item.url,item])).values()];
-
     const previous = sessionStore.get();
 
     const sameNovel = previous &&
@@ -156,21 +153,41 @@ directory=[...new Map(directory.map(item=>[item.url,item])).values()];
         url: result.chapter.url
       }];
     } else {
-      chapters = directory.map((item, i) => {
-        const prior = sameNovel
-          ? previous.chapters.find(c => c.url === item.url)
-          : null;
+  const previousByUrl = new Map();
 
-        return normalizeChapter(
-          prior || {
-            ...item,
-            id: item.url,
-            status: 'discovered',
-            selected: true
-          },
-          i
-        );
-      });
+  if (sameNovel) {
+    previous.chapters.forEach(chapter => {
+      const key = chapter.url || '';
+      if (!previousByUrl.has(key)) previousByUrl.set(key, []);
+      previousByUrl.get(key).push(chapter);
+    });
+  }
+
+  const occurrences = new Map();
+
+  chapters = directory.map((item, i) => {
+    const key = item.url || '';
+    const occurrence = occurrences.get(key) || 0;
+    occurrences.set(key, occurrence + 1);
+
+    const id = `${key}::entry-${occurrence + 1}`;
+
+    const prior = sameNovel
+      ? previous.chapters.find(c => c.id === id) ||
+        previousByUrl.get(key)?.[occurrence] ||
+        null
+      : null;
+
+    return normalizeChapter(
+      prior || {
+        ...item,
+        id,
+        status: 'discovered',
+        selected: true
+      },
+      i
+    );
+  });
     }
 
     novel.totalChapters = directory.length;
