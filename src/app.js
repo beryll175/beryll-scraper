@@ -19,7 +19,7 @@ function updateExtractionButtons(){
   $('#retry-failed').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'error');
   $('#extract').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'discovered' && c.selected);
   $('#clear').disabled = extractionRunning;
-  $('#close-scraper').disabled = extractionRunning;
+  $('#close-scraper').disabled = extractionRunning && !extractionPaused;
 }
 function status(message){$('#status').textContent=message;}
 function parse(html){return new DOMParser().parseFromString(html,'text/html');}
@@ -34,7 +34,20 @@ function render(){
     const meta=document.createElement('small');meta.textContent=ch.status==='error'?`Error: ${ch.error}`:ch.status==='extracted'?`${ch.wordCount} words${ch.short?' · Short chapter':''}`:'Not extracted';info.append(meta);row.append(cb,info);$('#chapters').append(row);
   });updateExport();
 }
-function updateExport(){ const ready=getSelectedChapters(chapters).some(c=>c.text); $('#export-txt').disabled=!ready; $('#export-docx').disabled=!ready; $('#export-epub').disabled=!ready; renderValidation(); }
+function updateExport(){
+  const ready=getSelectedChapters(chapters).some(c=>c.text);
+  const formats=activeAdapter?.exportFormats||['txt','docx','epub'];
+
+  $('#export-txt').hidden=!formats.includes('txt');
+  $('#export-docx').hidden=!formats.includes('docx');
+  $('#export-epub').hidden=!formats.includes('epub');
+
+  $('#export-txt').disabled=!ready;
+  $('#export-docx').disabled=!ready;
+  $('#export-epub').disabled=!ready||!formats.includes('epub');
+
+  renderValidation();
+}
 function renderValidation(){const box=$('#validation');if(!chapters.length){box.hidden=true;return;}const report=validateChapters(chapters);box.hidden=false;box.replaceChildren();const heading=document.createElement('h3');heading.textContent=`Validation: ${report.counts.errors} error(s), ${report.counts.warnings} warning(s), ${report.counts.info} pending`;box.append(heading);if(!report.issues.length){const ok=document.createElement('p');ok.className='hint';ok.textContent='No issues detected.';box.append(ok);return;}const list=document.createElement('ul');report.issues.forEach(issue=>{const item=document.createElement('li');item.className=issue.severity;item.textContent=issue.message;list.append(item);});box.append(list);}
 function updateNovelCard(){ $('#novel-card').hidden=!novel; if(!novel)return;$('#novel-title').textContent=novel.title||'—';$('#novel-author').textContent=novel.author||'—';$('#novel-total').textContent=String(directory.length);$('#novel-description').textContent=novel.description||''; }
 connectSourceBridge(({html,url})=>{sourceDoc=parse(html);sourceUrl=new URL(url).href;$('#source-url').value=sourceUrl;$('#source-badge').textContent=new URL(url).hostname;status(sessionStore.get()?'Source reconnected. Your saved session is still available.':'Connected to source page. Ready to inspect.');updateExtractionButtons();});
@@ -68,6 +81,27 @@ async function inspect() {
     };
 
     directory = [...result.chapters];
+    // Follow additional directory pages supplied by the adapter.
+const queuedPages=[...(result.directoryPages||[])];
+const visitedPages=new Set([new URL(sourceUrl).href]);
+
+while(queuedPages.length && visitedPages.size<100){
+  const page=queuedPages.shift();
+  const pageUrl=new URL(page.url,sourceUrl).href;
+
+  if(visitedPages.has(pageUrl)||new URL(pageUrl).origin!==new URL(sourceUrl).origin) continue;
+
+  visitedPages.add(pageUrl);
+
+  const pageDoc=await fetchDocument(pageUrl);
+  const pageResult=activeAdapter.inspect(pageDoc,pageUrl);
+
+  if(pageResult.kind==='directory') directory.push(...pageResult.chapters);
+
+  for(const next of pageResult.directoryPages||[]) queuedPages.push(next);
+}
+
+directory=[...new Map(directory.map(item=>[item.url,item])).values()];
 
     const previous = sessionStore.get();
 
@@ -152,8 +186,34 @@ async function runExtraction(retryOnly=false){
       $('#progress-text').textContent=`Extracting ${completed+1} of ${jobs.length}: ${chapter.title}`;
       try{
         const doc=await fetchDocument(chapter.url);
-        const extracted=activeAdapter.extractChapter(doc,chapter.url,chapter.title);
-        chapters[index]=normalizeChapter({...extracted,selected:!extracted.short,status:'extracted'});
+        let extracted=activeAdapter.extractChapter(doc,chapter.url,chapter.title);
+
+// Merge split chapters when the adapter provides a continuation URL.
+if(extracted.isSplitPart && extracted.nextPartUrl){
+  let nextUrl=extracted.nextPartUrl;
+  let combined=extracted.text;
+  let safety=0;
+
+  while(nextUrl && safety++<8){
+    const partDoc=await fetchDocument(nextUrl);
+    const part=activeAdapter.extractChapter(partDoc,nextUrl,chapter.title);
+
+    combined+=`\n\n${part.text}`;
+    nextUrl=part.isSplitPart?part.nextPartUrl:null;
+  }
+
+  const words=combined.match(/[\p{L}\p{N}]+(?:['’_-][\p{L}\p{N}]+)*/gu)||[];
+
+  extracted={
+    ...extracted,
+    text:combined,
+    paragraphs:combined.split(/\n\s*\n/).filter(Boolean),
+    wordCount:words.length,
+    isSplitPart:false
+  };
+}
+
+chapters[index]=normalizeChapter({...extracted,selected:!extracted.short,status:'extracted'});
       }catch(error){
         const message=error.message||String(error);errors.push({title:chapter.title,url:chapter.url,error:message});
         chapters[index]=normalizeChapter({...chapter,text:'',selected:false,status:'error',warnings:[message],error:message});
@@ -173,8 +233,8 @@ async function retryFailed(){return runExtraction(true);}
 $('#inspect').addEventListener('click', inspect);
 $('#extract').addEventListener('click', extractAll);
 $('#close-scraper').addEventListener('click', () => {
-  if (extractionRunning) {
-    status('Finish or pause extraction before closing the scraper.');
+  if (extractionRunning && !extractionPaused) {
+    status('Pause extraction before closing the scraper.');
     return;
   }
 
@@ -194,6 +254,7 @@ async function restoreSavedSession(){
   const saved=await sessionStore.restore();
   if(!saved)return;
   novel={title:saved.title,author:saved.author,description:saved.description||'',sourceUrl:saved.sourceUrl,sourceId:saved.sourceId};
+  activeAdapter=getAdapter(saved.sourceUrl);
   chapters=normalizeChapters(saved.chapters||[]);
   directory=chapters.map(ch=>({number:ch.number,title:ch.title,url:ch.url}));
   updateNovelCard();render();updateExtractionButtons();

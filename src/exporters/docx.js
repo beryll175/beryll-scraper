@@ -7,7 +7,7 @@ export function buildDocx(chapters, metadata={}) {
   if(metadata.author) body.push(para(`Author: ${metadata.author}`));
   for(const [i,ch] of chapters.entries()){
     if(i) body.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
-    body.push(para(ch.title,'Heading1'));
+    if(ch.title) body.push(para(ch.title,'Heading1'));
     const paragraphs=Array.isArray(ch.paragraphs)&&ch.paragraphs.length?ch.paragraphs:String(ch.text||'').split(/\r?\n\s*\r?\n/).filter(Boolean);
     for(const p of paragraphs) body.push(para(p));
   }
