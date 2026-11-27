@@ -1,57 +1,101 @@
-# Beryll Scraper — Xbanxia browser build
+# Beryll Scraper
 
-Beryll Scraper is a browser-only extraction tool for Xbanxia. It is intentionally separate from Beryll TL. The static app is hosted on GitHub Pages; chapter requests are made by a bookmarklet running on the source page, and chapter text is stored locally in the browser's IndexedDB.
+Beryll Scraper is a browser-based novel extraction tool that supports multiple Chinese novel websites.
 
-## Included
+The application runs as a static web app hosted on GitHub Pages. A bookmarklet launched from the source website connects the page to the scraper and handles chapter requests.
 
-- Xbanxia novel-directory parsing using selectors confirmed against the supplied rendered page (`.book-describe h1`, `.book-describe p a`, `.describe-html`, `.book-list ul li a[href]`).
-- Individual chapter extraction using `#nr_title` and `#nr1`, with injected scripts, iframes, navigation and detected advertising containers removed while preserving paragraph breaks.
-- Same-origin page-fetch bridge. The bookmarklet refuses to fetch URLs outside the source page's origin.
-- Directory pagination discovery where a next-page link is exposed; duplicate URLs are removed while retaining source order.
-- Chapter list with individual selection, select all/none and one-based inclusive range selection.
-- Sequential extraction, pause-after-current-chapter, resume, retry-failed, progress display and per-chapter errors.
-- Short-chapter warnings and default deselection; validation for possible numbering gaps, duplicate chapter numbers, failed/empty chapters and pending work.
-- IndexedDB recovery of novel details, extracted text, selections and chapter statuses. Relaunch the bookmarklet on the source novel page to reconnect after reopening the app.
-- TXT, DOCX and EPUB 3 exports. Export only selected chapters with extracted text, in source order. Optional novel title/author metadata can be included or omitted.
-- Responsive black/orange interface.
+Extracted chapters, selections, and session progress are stored locally in the browser using IndexedDB. No chapter content is uploaded to a Beryll server.
 
-## Install / host
+## Supported Websites
 
-1. Upload the contents of this folder to a GitHub repository named `beryll-scraper-browser` (or change the path in `bookmarklet.txt` to match your repository).
-2. In GitHub, open **Settings → Pages**, choose **Deploy from a branch**, select the `main` branch and `/ (root)`, then save.
-3. Wait for GitHub Pages to publish the site.
-4. Open `bookmarklet.txt`, replace `YOUR_GITHUB_USERNAME` with your GitHub username, copy the complete `javascript:` line, and create a Chrome bookmark with that line as its URL.
-5. Open an Xbanxia novel directory page, tap the bookmark, then tap **Inspect page**.
-6. Select chapters and choose **Extract chapters**. Export selected completed chapters as TXT, DOCX or EPUB.
+The current adapters support:
 
-If you change the repository name or Pages URL, update the `APP` constant in `bookmarklet.txt` before creating the bookmark.
+- Xbanxia
+- Full Novel Website (quanben-xiaoshuo.com)
+- Novel543
+- Hetushu / Hetubook
+- CZBooks / 小說狂人
+- 52书库
 
-## Recovery
+Each website has its own adapter for identifying novel directories, chapter links, and readable chapter content.
 
-The app saves its active session in IndexedDB for the GitHub Pages origin. If the browser or app closes, reopen the source novel page and launch the bookmarklet again. The saved chapter list and extracted text should be restored; the fresh bookmarklet launch reconnects the page-fetch bridge. Clearing browser site data, changing browser profile or using another browser can remove/hide the saved session. **Clear session** deletes the saved local session.
+Generic HTML detection is included internally but is not advertised as a supported extraction source.
 
-## Export behavior
+## Features
 
-- **TXT:** UTF-8 plain text with chapter headings; optional title and author header.
-- **DOCX:** Word Open XML document with title/author metadata, chapter headings, paragraph spacing and page breaks between chapters.
-- **EPUB:** EPUB 3 package with `mimetype` first and uncompressed, package metadata, navigation table of contents, stylesheet and one XHTML file per chapter.
-- Filename is sanitized for common filesystem restrictions. Only selected chapters with non-empty extracted text are exported.
+- Website-specific novel directory and chapter detection.
+- Chapter extraction with advertisement and navigation cleanup.
+- Directory pagination discovery where supported by the website adapter.
+- Chapter selection with individual checkboxes, select all, select none, and range selection.
+- Sequential extraction with progress tracking.
+- Pause and resume extraction.
+- Retry failed chapters.
+- Automatic retries for failed page requests, with a limited number of attempts.
+- Split-chapter detection and continuation merging where supported.
+- Short-chapter warnings and default deselection.
+- Validation for possible numbering gaps, duplicate chapter numbers, failed chapters, empty chapters, and pending work.
+- Local session recovery through IndexedDB.
+- TXT, DOCX, and EPUB 3 exports where supported by the selected adapter.
+- Responsive black-and-orange interface.
 
-## Scope and limitations
+## Installation and Hosting
 
-- This build supports Xbanxia only. Beryll TL integration and Omni extraction are deliberately excluded from this project scope. Generic HTML is not advertised as supported.
-- The bridge can fetch only pages on the same origin as the source page. It does not bypass logins, paywalls, access controls, anti-bot restrictions or browser security rules.
-- If Xbanxia changes its markup, blocks a request or inserts a new type of advertisement, extraction may fail or require adapter updates. Review the validation report and sample the exported text.
-- Directory pagination depends on a discoverable next-page link. The supplied novel page contains all 114 chapter links in one directory.
-- Validation is advisory. Numbering gaps and duplicate numbers may be legitimate extras, so nothing is silently deleted.
-- No live end-to-end extraction has been performed against Xbanxia in this build environment. Automated tests cover the core, validation logic, adapter helpers and export package structure; browser/source-site testing remains necessary before relying on a full novel export.
+1. Upload the project files to your GitHub repository.
+2. Open **Settings → Pages**.
+3. Select **Deploy from a branch**.
+4. Choose the `main` branch and `/ (root)`.
+5. Save and wait for GitHub Pages to publish the application.
+6. Open `bookmarklet.txt`.
+7. Copy the complete `javascript:` line.
+8. Create a browser bookmark and paste the line into its URL field.
+9. Open a supported novel website and launch the bookmarklet.
+10. Select **Inspect page** in the scraper.
 
-## Development
+Select the chapters you want and choose **Extract chapters**.
 
-Requires a modern browser and Node.js 18+ for tests.
+If the repository name or GitHub Pages address changes, update the `APP` constant in `bookmarklet.txt`.
 
-```sh
+## Session Recovery
+
+The application saves the active session in IndexedDB under the GitHub Pages origin.
+
+If the browser or app closes:
+
+1. Reopen the source novel page.
+2. Launch the bookmarklet again.
+3. The scraper reconnects to the source page.
+4. Your saved chapter list, extracted text, selections, and chapter statuses can be restored.
+
+Clearing browser site data, changing browser profiles, or using another browser may make the saved session unavailable.
+
+The **Clear session** button deletes the saved local session.
+
+## Export Formats
+
+### TXT
+UTF-8 plain-text export with chapter headings and optional novel metadata.
+
+### DOCX
+Microsoft Word document with chapter headings, paragraph spacing, and page breaks between chapters.
+
+### EPUB
+EPUB 3 package with metadata, navigation table of contents, stylesheet, and individual XHTML chapter files.
+
+Only selected chapters with extracted text are exported.
+
+Some adapters support a limited set of export formats.
+
+## Technical Details
+
+- Static browser application.
+- JavaScript ES modules.
+- Native browser APIs.
+- IndexedDB for local session storage.
+- Bookmarklet-based source-page communication.
+- No runtime package dependencies.
+- Node.js 18+ required for automated tests.
+
+Run tests with:
+
+```bash
 npm test
-```
-
-The project uses native browser APIs and has no runtime package dependencies.
