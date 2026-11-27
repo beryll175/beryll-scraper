@@ -14,7 +14,13 @@ let activeAdapter = null;
 function setPaused(value){extractionPaused=value;$('#pause-extract').textContent=value?'Resume':'Pause';$('#progress-text').textContent=value?'Paused after the current chapter.':'Resuming extraction…';if(!value){pauseWaiters.splice(0).forEach(resolve=>resolve());}}
 async function waitIfPaused(){if(!extractionPaused)return;await new Promise(resolve=>pauseWaiters.push(resolve));}
 function persistChapters(){if(sessionStore.get())sessionStore.update(s=>({...s,chapters}));}
-function updateExtractionButtons(){ $('#pause-extract').disabled=!extractionRunning;$('#retry-failed').disabled=extractionRunning||!sourceDoc||!chapters.some(c=>c.status==='error');$('#extract').disabled=extractionRunning||!sourceDoc||!chapters.some(c=>c.status==='discovered'&&c.selected);$('#clear').disabled=extractionRunning; }
+function updateExtractionButtons(){
+  $('#pause-extract').disabled = !extractionRunning;
+  $('#retry-failed').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'error');
+  $('#extract').disabled = extractionRunning || !sourceDoc || !chapters.some(c => c.status === 'discovered' && c.selected);
+  $('#clear').disabled = extractionRunning;
+  $('#close-scraper').disabled = extractionRunning;
+}
 function status(message){$('#status').textContent=message;}
 function parse(html){return new DOMParser().parseFromString(html,'text/html');}
 function render(){
@@ -164,7 +170,17 @@ async function runExtraction(retryOnly=false){
 }
 async function extractAll(){return runExtraction(false);}
 async function retryFailed(){return runExtraction(true);}
-$('#inspect').addEventListener('click',inspect);$('#extract').addEventListener('click',extractAll);$('#retry-failed').addEventListener('click',retryFailed);$('#pause-extract').addEventListener('click',()=>{if(!extractionRunning)return;setPaused(!extractionPaused);});
+$('#close-scraper').addEventListener('click', () => {
+  if (extractionRunning) {
+    status('Finish or pause extraction before closing the scraper.');
+    return;
+  }
+
+  window.parent.postMessage({
+    type: 'BERYLL_SCRAPER_CLOSE'
+  }, '*');
+});
+$('#retry-failed').addEventListener('click',retryFailed);$('#pause-extract').addEventListener('click',()=>{if(!extractionRunning)return;setPaused(!extractionPaused);});
 $('#clear').addEventListener('click',async()=>{sourceDoc=null;sourceUrl='';directory=[];chapters=[];novel=null;errors=[];extractionPaused=false;pauseWaiters.splice(0).forEach(resolve=>resolve());await sessionStore.clear();$('#source-url').value='';$('#source-badge').textContent='Not connected';$('#novel-card').hidden=true;$('#progress-wrap').hidden=true;render();updateExtractionButtons();status('Saved session cleared from this browser.');});
 $('#select-all').addEventListener('click',()=>{chapters=selectAll(chapters,true);persistChapters();render();updateExtractionButtons();});$('#select-none').addEventListener('click',()=>{chapters=selectAll(chapters,false);persistChapters();render();updateExtractionButtons();});
 $('#select-range').addEventListener('click',()=>{try{chapters=selectRange(chapters,Number($('#range-start').value),Number($('#range-end').value),true);persistChapters();render();updateExtractionButtons();}catch(e){status(e.message);}});
