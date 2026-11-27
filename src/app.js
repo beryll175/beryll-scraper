@@ -51,7 +51,35 @@ function updateExport(){
 function renderValidation(){const box=$('#validation');if(!chapters.length){box.hidden=true;return;}const report=validateChapters(chapters);box.hidden=false;box.replaceChildren();const heading=document.createElement('h3');heading.textContent=`Validation: ${report.counts.errors} error(s), ${report.counts.warnings} warning(s), ${report.counts.info} pending`;box.append(heading);if(!report.issues.length){const ok=document.createElement('p');ok.className='hint';ok.textContent='No issues detected.';box.append(ok);return;}const list=document.createElement('ul');report.issues.forEach(issue=>{const item=document.createElement('li');item.className=issue.severity;item.textContent=issue.message;list.append(item);});box.append(list);}
 function updateNovelCard(){ $('#novel-card').hidden=!novel; if(!novel)return;$('#novel-title').textContent=novel.title||'—';$('#novel-author').textContent=novel.author||'—';$('#novel-total').textContent=String(directory.length);$('#novel-description').textContent=novel.description||''; }
 connectSourceBridge(({html,url})=>{sourceDoc=parse(html);sourceUrl=new URL(url).href;$('#source-url').value=sourceUrl;$('#source-badge').textContent=new URL(url).hostname;status(sessionStore.get()?'Source reconnected. Your saved session is still available.':'Connected to source page. Ready to inspect.');updateExtractionButtons();});
-async function fetchDocument(url){const result=await fetchSourcePage(url);return parse(result.html);}
+async function fetchDocument(url) {
+  const maxAttempts = 3;
+  const retryWaits = [5000, 15000];
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await fetchSourcePage(url);
+      return parse(result.html);
+
+    } catch (error) {
+      const message = error.message || String(error);
+
+      if (attempt === maxAttempts) {
+        throw new Error(
+          `Fetch failed after ${maxAttempts} attempts: ${message}`
+        );
+      }
+
+      const wait = retryWaits[attempt - 1];
+
+      status(
+        `Request failed. Retrying in ${wait / 1000} seconds ` +
+        `(${attempt + 1}/${maxAttempts})...`
+      );
+
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
+}
 async function inspect() {
   if (!sourceDoc || !sourceUrl) {
     status('No source-page connection. Launch the bookmarklet from the novel page.');
