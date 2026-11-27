@@ -170,6 +170,8 @@ async function runExtraction(retryOnly=false){
 }
 async function extractAll(){return runExtraction(false);}
 async function retryFailed(){return runExtraction(true);}
+$('#inspect').addEventListener('click', inspect);
+$('#extract').addEventListener('click', extractAll);
 $('#close-scraper').addEventListener('click', () => {
   if (extractionRunning) {
     status('Finish or pause extraction before closing the scraper.');
