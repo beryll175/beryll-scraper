@@ -221,7 +221,8 @@ chapters[index]=normalizeChapter({...extracted,selected:!extracted.short,status:
       completed++;render();persistChapters();
       $('#progress-bar').style.width=`${Math.round(completed/jobs.length*100)}%`;
       $('#progress-text').textContent=`${completed} of ${jobs.length} processed · ${chapters.filter(c=>c.status==='error').length} failed`;
-      await new Promise(resolve=>setTimeout(resolve,250));
+      const delay = activeAdapter?.id === 'novel543' ? 3000 : 250;
+await new Promise(resolve => setTimeout(resolve, delay));
     }
     $('#progress-text').textContent=`Finished: ${chapters.filter(c=>c.status==='extracted').length} extracted, ${chapters.filter(c=>c.status==='error').length} failed. Short chapters remain unchecked.`;
     status(retryOnly?'Retry pass finished.':'Extraction finished.');
