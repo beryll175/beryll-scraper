@@ -52,7 +52,7 @@ line.
 
 1.  Visit a supported novel website.
 2.  Open the novel's chapter directory or table-of-contents page.
-3.  Tap or click the **Beryll Scraper** bookmark you created.
+3.  Tap or click the **Beryll Scraper** bookmark you created. (To open the bookmark, click the url the page you're on and type the name of the bookmark i.e Beryll Scraper. Tap the bookmark.) 
 4.  The scraper interface should open over the page.
 5.  If the interface does not appear, check that the bookmarklet was
     copied completely and that your browser allows bookmarklets to run.
