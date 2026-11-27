@@ -2,7 +2,15 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Beryll Scraper</title><link rel="stylesheet" href="assets/style.css"></head>
 <body><main class="app">
-<header><div class="brand-mark">B</div><div><h1>Beryll Scraper</h1><p>Browser-side novel extraction</p></div><span class="badge">LOCAL</span></header>
+<header>
+  <div class="brand-mark">B</div>
+  <div>
+    <h1>Beryll Scraper</h1>
+    <p>Browser-side novel extraction</p>
+  </div>
+  <span class="badge">LOCAL</span>
+  <button id="close-scraper" class="close-button" type="button" aria-label="Close scraper" title="Close scraper">✕</button>
+</header>
 <section class="card"><div class="section-head"><h2>Source</h2><span id="source-badge">Not connected</span></div><label for="source-url">Current page</label><input id="source-url" type="url" placeholder="Launch from an Xbanxia novel page"><div class="row"><button id="inspect">Inspect page</button><button class="secondary" id="clear">Clear session</button></div><p class="hint" id="status">Open an Xbanxia novel page and launch this tool using its bookmarklet.</p></section>
 <section class="card" id="novel-card" hidden><h2>Novel information</h2><div class="metadata"><div><small>Title</small><strong id="novel-title">—</strong></div><div><small>Author</small><strong id="novel-author">—</strong></div><div><small>Chapters discovered</small><strong id="novel-total">0</strong></div></div><p id="novel-description" class="description"></p><div class="row"><button id="extract">Extract chapters</button><button id="pause-extract" class="secondary" disabled>Pause</button><button id="retry-failed" class="secondary" disabled>Retry failed</button></div><div class="progress-wrap" id="progress-wrap" hidden><div class="progress-track"><div id="progress-bar"></div></div><p id="progress-text" class="hint"></p></div></section>
 <section class="card"><div class="section-head"><h2>Chapters</h2><span id="count">0</span></div><div class="range-row"><input id="range-start" type="number" min="1" placeholder="From"><input id="range-end" type="number" min="1" placeholder="To"><button id="select-range" class="secondary">Select range</button></div><div id="chapters" class="empty">No chapters discovered yet.</div><div class="row"><button id="select-all" class="secondary">Select all</button><button id="select-none" class="secondary">Select none</button></div><div class="validation" id="validation" hidden></div></section>
