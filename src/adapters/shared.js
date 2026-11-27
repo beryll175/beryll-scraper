@@ -31,12 +31,25 @@ export function makeChapter(url, title, text, number = parseNumber(title)) {
   return { url: new URL(url).href, number, title: cleanText(title), text, paragraphs: text.split(/\n\s*\n/).map(cleanText).filter(Boolean), wordCount: count, short: count < 50 };
 }
 export function uniqueLinks(doc, pageUrl, selectors, {titleFrom='text'} = {}) {
-  const seen = new Set(), items = [];
+  const items = [];
+
   doc.querySelectorAll(selectors).forEach(a => {
     const url = safeSameHostUrl(a.getAttribute('href'), pageUrl);
-    const title = cleanText(titleFrom === 'title' ? a.getAttribute('title') || a.textContent : a.textContent || a.getAttribute('title'));
-    if (!url || !title || seen.has(url) || url === new URL(pageUrl).href) return;
-    seen.add(url); items.push({number: parseNumber(title), title, url});
+
+    const title = cleanText(
+      titleFrom === 'title'
+        ? a.getAttribute('title') || a.textContent
+        : a.textContent || a.getAttribute('title')
+    );
+
+    if (!url || !title || url === new URL(pageUrl).href) return;
+
+    items.push({
+      number: parseNumber(title),
+      title,
+      url
+    });
   });
+
   return items;
 }
