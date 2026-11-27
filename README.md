@@ -1,14 +1,14 @@
-# Beryll Scraper
+Beryll Scraper
 
-Beryll Scraper is a browser-based novel extraction tool that supports multiple Chinese novel websites.
+Beryll Scraper is a browser-based tool for extracting chapters from supported Chinese novel websites.
 
-The application runs as a static web app hosted on GitHub Pages. A bookmarklet launched from the source website connects the page to the scraper and handles chapter requests.
+It runs directly in your browser and allows you to discover, select, extract, and export novel chapters without uploading your extracted content to a Beryll server.
 
-Extracted chapters, selections, and session progress are stored locally in the browser using IndexedDB. No chapter content is uploaded to a Beryll server.
+"Open Beryll Scraper" (https://beryll175.github.io/beryll-scraper/)
 
-## Supported Websites
+Supported Websites
 
-The current adapters support:
+The currently configured adapters support:
 
 - Xbanxia
 - Full Novel Website (quanben-xiaoshuo.com)
@@ -17,85 +17,108 @@ The current adapters support:
 - CZBooks / 小說狂人
 - 52书库
 
-Each website has its own adapter for identifying novel directories, chapter links, and readable chapter content.
+Website support depends on the site's page structure and adapter configuration.
 
-Generic HTML detection is included internally but is not advertised as a supported extraction source.
+Features
 
-## Features
-
-- Website-specific novel directory and chapter detection.
-- Chapter extraction with advertisement and navigation cleanup.
-- Directory pagination discovery where supported by the website adapter.
-- Chapter selection with individual checkboxes, select all, select none, and range selection.
-- Sequential extraction with progress tracking.
+- Automatic novel and chapter detection.
+- Chapter directory pagination discovery where supported.
+- Individual chapter selection.
+- Select all and select none.
+- Chapter range selection.
+- Sequential chapter extraction.
 - Pause and resume extraction.
 - Retry failed chapters.
-- Automatic retries for failed page requests, with a limited number of attempts.
+- Automatic retries for failed page requests.
 - Split-chapter detection and continuation merging where supported.
-- Short-chapter warnings and default deselection.
-- Validation for possible numbering gaps, duplicate chapter numbers, failed chapters, empty chapters, and pending work.
-- Local session recovery through IndexedDB.
-- TXT, DOCX, and EPUB 3 exports where supported by the selected adapter.
+- Short-chapter warnings.
+- Detection of possible numbering gaps and duplicate chapter numbers.
+- Local session recovery using IndexedDB.
+- TXT, DOCX, and EPUB exports where supported.
 - Responsive black-and-orange interface.
 
-## Installation and Hosting
+Getting Started
 
-1. Upload the project files to your GitHub repository.
-2. Open **Settings → Pages**.
-3. Select **Deploy from a branch**.
-4. Choose the `main` branch and `/ (root)`.
-5. Save and wait for GitHub Pages to publish the application.
-6. Open `bookmarklet.txt`.
-7. Copy the complete `javascript:` line.
-8. Create a browser bookmark and paste the line into its URL field.
-9. Open a supported novel website and launch the bookmarklet.
-10. Select **Inspect page** in the scraper.
+You do not need to install the application itself. Beryll Scraper is hosted on GitHub Pages.
 
-Select the chapters you want and choose **Extract chapters**.
+You only need to install its bookmarklet.
 
-If the repository name or GitHub Pages address changes, update the `APP` constant in `bookmarklet.txt`.
+Step 1: Open the Scraper
 
-## Session Recovery
+Visit:
 
-The application saves the active session in IndexedDB under the GitHub Pages origin.
+https://beryll175.github.io/beryll-scraper/
 
-If the browser or app closes:
+Step 2: Get the Bookmarklet
 
-1. Reopen the source novel page.
-2. Launch the bookmarklet again.
-3. The scraper reconnects to the source page.
-4. Your saved chapter list, extracted text, selections, and chapter statuses can be restored.
+1. Open the "Beryll Scraper repository" (https://github.com/beryll175/beryll-scraper).
+2. Open "bookmarklet.txt".
+3. Copy the complete line of code beginning with "javascript:".
 
-Clearing browser site data, changing browser profiles, or using another browser may make the saved session unavailable.
+Step 3: Create a Browser Bookmark
 
-The **Clear session** button deletes the saved local session.
+1. Create a new bookmark in your browser.
+2. Name it Beryll Scraper.
+3. Paste the copied code into the bookmark's URL or address field.
+4. Save the bookmark.
 
-## Export Formats
+Make sure the code goes into the URL field, not the bookmark name.
 
-### TXT
-UTF-8 plain-text export with chapter headings and optional novel metadata.
+Step 4: Start Scraping
 
-### DOCX
-Microsoft Word document with chapter headings, paragraph spacing, and page breaks between chapters.
+1. Visit a supported novel website.
+2. Open the novel's chapter directory or table of contents.
+3. Launch the Beryll Scraper bookmarklet.
+4. Select Inspect page.
+5. Review the discovered chapters.
+6. Select the chapters you want.
+7. Select Extract chapters.
 
-### EPUB
-EPUB 3 package with metadata, navigation table of contents, stylesheet, and individual XHTML chapter files.
+Step 5: Export
 
-Only selected chapters with extracted text are exported.
+Once extraction is complete, choose your preferred format:
 
-Some adapters support a limited set of export formats.
+- TXT
+- DOCX
+- EPUB
 
-## Technical Details
+Only selected chapters with successfully extracted text are exported.
+
+Full User Guide
+
+For detailed instructions, including bookmarklet installation, extraction, exporting, session recovery, and troubleshooting, see:
+
+"Beryll Scraper Installation & User Guide" (docs/USER_GUIDE.md)
+
+Privacy and Saved Sessions
+
+Beryll Scraper uses IndexedDB to save sessions locally in your browser.
+
+- Extracted chapters are stored on your device.
+- Your sessions are separate from those of other users.
+- Your extracted content is not uploaded to a Beryll server.
+- Sessions may be lost if browser site data is cleared or you switch browsers or browser profiles.
+
+Use Clear session to delete your saved session.
+
+Technical Details
 
 - Static browser application.
 - JavaScript ES modules.
 - Native browser APIs.
-- IndexedDB for local session storage.
+- IndexedDB for local storage.
 - Bookmarklet-based source-page communication.
 - No runtime package dependencies.
 - Node.js 18+ required for automated tests.
 
 Run tests with:
 
-```bash
 npm test
+
+Updates
+
+Beryll Scraper is hosted on GitHub Pages. Updates to the project become available to users when GitHub Pages publishes the latest changes.
+
+---
+
+Beryll Scraper is an independent browser-based project. Website support may change as adapters are added or updated.
