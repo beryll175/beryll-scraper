@@ -54,6 +54,10 @@ async function inspect() {
 
   try {
     const result = activeAdapter.inspect(sourceDoc, sourceUrl);
+    status(
+  `DEBUG | Adapter: ${activeAdapter.id} | Host: ${new URL(sourceUrl).hostname} | Type: ${result.kind} | Links: ${result.chapters?.length ?? 0} | Title: ${result.title || '(empty)'}`
+);
+return;
 
     if (result.kind === 'unknown') {
       throw new Error('Could not identify the novel directory or chapter page.');
